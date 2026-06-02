@@ -7,11 +7,46 @@ import type {
   DashboardStats,
   DueAlert,
   ReportSummary,
-  ApiResult
+  ApiResult,
+  User,
+  NewUserInput,
+  UserRole,
+  SetupStatus,
+  FirstRunSetupInput,
+  LicenseStatus,
+  BackupSettings
 } from './types'
 
 // واجهة برمجية مكشوفة على window.api داخل واجهة المستخدم
 export interface Api {
+  // المصادقة والإعداد
+  getSetupStatus(): Promise<ApiResult<SetupStatus>>
+  runSetup(input: FirstRunSetupInput): Promise<ApiResult<User>>
+  login(username: string, password: string): Promise<ApiResult<User>>
+  logout(): Promise<ApiResult<void>>
+  currentUser(): Promise<ApiResult<User | null>>
+
+  // المستخدمون (للمالك)
+  listUsers(): Promise<ApiResult<User[]>>
+  createUser(input: NewUserInput): Promise<ApiResult<number>>
+  updateUser(id: number, name: string, role: UserRole): Promise<ApiResult<void>>
+  changePassword(id: number, newPassword: string): Promise<ApiResult<void>>
+  deleteUser(id: number): Promise<ApiResult<void>>
+
+  // الترخيص
+  licenseStatus(): Promise<ApiResult<LicenseStatus>>
+  activateLicense(key: string): Promise<ApiResult<LicenseStatus>>
+  startTrial(days: number): Promise<ApiResult<LicenseStatus>>
+
+  // اختيار مجلد عام
+  chooseDir(): Promise<ApiResult<string | null>>
+
+  // النسخ الاحتياطي اليومي والموقع الثانوي
+  backupSettings(): Promise<ApiResult<BackupSettings>>
+  backupNow(): Promise<ApiResult<{ local: string; secondary: string | null }>>
+  chooseBackupDir(): Promise<ApiResult<BackupSettings>>
+  clearBackupDir(): Promise<ApiResult<BackupSettings>>
+
   // العملاء
   listCustomers(search?: string): Promise<ApiResult<Customer[]>>
   getCustomer(id: number): Promise<ApiResult<Customer | undefined>>

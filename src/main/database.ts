@@ -76,6 +76,20 @@ CREATE TABLE IF NOT EXISTS installments (
   FOREIGN KEY (saleId) REFERENCES sales(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL UNIQUE,
+  name TEXT DEFAULT '',
+  role TEXT NOT NULL DEFAULT 'seller',
+  passwordHash TEXT NOT NULL,
+  createdAt TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS app_config (
+  key TEXT PRIMARY KEY,
+  value TEXT
+);
+
 CREATE INDEX IF NOT EXISTS idx_inst_sale ON installments(saleId);
 CREATE INDEX IF NOT EXISTS idx_inst_due ON installments(dueDate);
 CREATE INDEX IF NOT EXISTS idx_sales_customer ON sales(customerId);
@@ -105,6 +119,20 @@ export function persist(): void {
 
 export function getDbFilePath(): string {
   return dbFilePath
+}
+
+// قراءة/كتابة قيم الإعداد العامة (الترخيص، مجلد النسخ الاحتياطي، ...)
+export function getConfig(key: string): string | null {
+  const row = get<{ value: string | null }>(`SELECT value FROM app_config WHERE key = ?`, [key])
+  return row ? row.value : null
+}
+
+export function setConfig(key: string, value: string | null): void {
+  run(
+    `INSERT INTO app_config (key, value) VALUES (?, ?)
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+    [key, value]
+  )
 }
 
 // نسخة احتياطية إلى مسار محدد

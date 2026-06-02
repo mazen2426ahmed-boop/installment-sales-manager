@@ -3,8 +3,10 @@ import { join } from 'path'
 import { initDatabase, backupTo, restoreFrom, getDbFilePath } from './database'
 import * as svc from './services'
 import * as excel from './excel'
+import { assertCanWrite } from './license'
+import { ensureDailyBackup, backupNow, getBackupSettings, setBackupDir } from './backup'
 import { buildReportHtml } from './report-html'
-import type { ApiResult } from '../shared/types'
+import type { ApiResult, NewUserInput, UserRole, FirstRunSetupInput } from '../shared/types'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -53,6 +55,23 @@ function handle<T>(channel: string, fn: (...args: never[]) => T | Promise<T>): v
 }
 
 function registerIpc(): void {
+  // المصادقة والإعداد والمستخدمون
+  handle('setup:status', () => svc.getSetupStatus())
+  handle('setup:run', (input: FirstRunSetupInput) => svc.firstRunSetup(input))
+  handle('auth:login', (username: string, password: string) => svc.login(username, password))
+  handle('auth:logout', () => svc.logout())
+  handle('auth:current', () => svc.getCurrentUser())
+  handle('users:list', () => svc.listUsers())
+  handle('users:create', (input: NewUserInput) => svc.createUser(input))
+  handle('users:update', (id: number, name: string, role: UserRole) => svc.updateUser(id, name, role))
+  handle('users:changePassword', (id: number, newPassword: string) => svc.changePassword(id, newPassword))
+  handle('users:delete', (id: number) => svc.deleteUser(id))
+
+  // الترخيص
+  handle('license:status', () => svc.licenseStatus())
+  handle('license:activate', (key: string) => svc.activateLicense(key))
+  handle('license:startTrial', (days: number) => svc.startLicenseTrial(days))
+
   // العملاء
   handle('customers:list', (search?: string) => svc.listCustomers(search ?? ''))
   handle('customers:get', (id: number) => svc.getCustomer(id))
@@ -117,6 +136,7 @@ function registerIpc(): void {
   })
 
   handle('excel:import', async (kind: 'customers' | 'products') => {
+    assertCanWrite()
     const path = await chooseOpenPath()
     if (!path) return null
     return kind === 'customers' ? excel.importCustomers(path) : excel.importProducts(path)
@@ -145,6 +165,28 @@ function registerIpc(): void {
     await restoreFrom(path)
     return true
   })
+
+  // اختيار مجلد عام (يُستخدم في شاشة الإعداد الأولى)
+  handle('dialog:chooseDir', () => chooseDirectory())
+
+  // إعدادات النسخ الاحتياطي اليومي والموقع الثانوي
+  handle('backup:settings', () => getBackupSettings())
+  handle('backup:now', () => backupNow())
+  handle('backup:chooseDir', async () => {
+    const dir = await chooseDirectory()
+    if (dir) setBackupDir(dir)
+    return getBackupSettings()
+  })
+  handle('backup:clearDir', () => {
+    setBackupDir(null)
+    return getBackupSettings()
+  })
+}
+
+async function chooseDirectory(): Promise<string | null> {
+  if (!mainWindow) return null
+  const res = await dialog.showOpenDialog(mainWindow, { properties: ['openDirectory', 'createDirectory'] })
+  return res.canceled || res.filePaths.length === 0 ? null : res.filePaths[0]
 }
 
 async function chooseSavePath(defaultName: string): Promise<string | null> {
@@ -178,6 +220,7 @@ async function printHtml(html: string): Promise<void> {
 
 app.whenReady().then(async () => {
   await initDatabase()
+  ensureDailyBackup()
   registerIpc()
   createWindow()
   console.log('قاعدة البيانات:', getDbFilePath())

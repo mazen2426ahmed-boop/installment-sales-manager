@@ -3,6 +3,7 @@ import Icon from '../components/Icon'
 import Modal from '../components/Modal'
 import { EmptyState, Spinner } from '../components/ui'
 import { useToast } from '../components/Toast'
+import { useApp } from '../context/AppContext'
 import { formatMoney } from '../lib/format'
 import type { Product, Supplier } from '../../../shared/types'
 
@@ -40,6 +41,7 @@ export default function Inventory(): React.JSX.Element {
 type Notify = (m: string, k?: 'success' | 'error' | 'info') => void
 
 function Products({ notify }: { notify: Notify }): React.JSX.Element {
+  const { readOnly } = useApp()
   const [list, setList] = useState<Product[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(true)
@@ -135,13 +137,13 @@ function Products({ notify }: { notify: Notify }): React.JSX.Element {
           <button className="btn btn-outline" onClick={template}>
             <Icon name="file" size={16} /> قالب
           </button>
-          <button className="btn btn-outline" onClick={importExcel}>
+          <button className="btn btn-outline" onClick={importExcel} disabled={readOnly}>
             <Icon name="upload" size={16} /> استيراد
           </button>
           <button className="btn btn-outline" onClick={exportExcel}>
             <Icon name="download" size={16} /> تصدير
           </button>
-          <button className="btn btn-primary" onClick={openNew}>
+          <button className="btn btn-primary" onClick={openNew} disabled={readOnly}>
             <Icon name="plus" size={16} /> منتج جديد
           </button>
         </div>
@@ -180,10 +182,10 @@ function Products({ notify }: { notify: Notify }): React.JSX.Element {
                   <td className="muted">{suppliers.find((s) => s.id === p.supplierId)?.name || '—'}</td>
                   <td>
                     <div className="table-actions">
-                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit(p)}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit(p)} disabled={readOnly}>
                         <Icon name="edit" size={16} />
                       </button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => remove(p)}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => remove(p)} disabled={readOnly}>
                         <Icon name="trash" size={16} />
                       </button>
                     </div>
@@ -269,6 +271,7 @@ function Products({ notify }: { notify: Notify }): React.JSX.Element {
 }
 
 function Suppliers({ notify }: { notify: Notify }): React.JSX.Element {
+  const { readOnly } = useApp()
   const [list, setList] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<Supplier | null>(null)
@@ -322,7 +325,7 @@ function Suppliers({ notify }: { notify: Notify }): React.JSX.Element {
     <>
       <div className="page-header">
         <div />
-        <button className="btn btn-primary" onClick={openNew}>
+        <button className="btn btn-primary" onClick={openNew} disabled={readOnly}>
           <Icon name="plus" size={16} /> مورد جديد
         </button>
       </div>
@@ -351,10 +354,10 @@ function Suppliers({ notify }: { notify: Notify }): React.JSX.Element {
                   <td className="muted">{s.notes || '—'}</td>
                   <td>
                     <div className="table-actions">
-                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit(s)}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit(s)} disabled={readOnly}>
                         <Icon name="edit" size={16} />
                       </button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => remove(s)}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => remove(s)} disabled={readOnly}>
                         <Icon name="trash" size={16} />
                       </button>
                     </div>

@@ -1,4 +1,7 @@
 import { all, get, run, transaction, runNoPersist, persist } from './database'
+import { hashPassword, verifyPassword } from './auth'
+import { assertCanWrite, startTrial, activateKey, getLicenseStatus } from './license'
+import { setBackupDir } from './backup'
 import {
   computeSalePrice,
   computeProfit,
@@ -20,7 +23,13 @@ import type {
   DashboardStats,
   DueAlert,
   ReportSummary,
-  ReportRow
+  ReportRow,
+  User,
+  NewUserInput,
+  UserRole,
+  SetupStatus,
+  FirstRunSetupInput,
+  LicenseStatus
 } from '../shared/types'
 
 const now = (): string => new Date().toISOString()
@@ -42,6 +51,7 @@ export function getCustomer(id: number): Customer | undefined {
 }
 
 export function createCustomer(c: Omit<Customer, 'id' | 'createdAt'>): number {
+  assertCanWrite()
   const res = run(
     `INSERT INTO customers (name, phone, nationalId, address, notes, createdAt) VALUES (?,?,?,?,?,?)`,
     [c.name, c.phone || '', c.nationalId || '', c.address || '', c.notes || '', now()]
@@ -50,6 +60,7 @@ export function createCustomer(c: Omit<Customer, 'id' | 'createdAt'>): number {
 }
 
 export function updateCustomer(c: Customer): void {
+  assertCanWrite()
   run(
     `UPDATE customers SET name=?, phone=?, nationalId=?, address=?, notes=? WHERE id=?`,
     [c.name, c.phone || '', c.nationalId || '', c.address || '', c.notes || '', c.id]
@@ -57,6 +68,7 @@ export function updateCustomer(c: Customer): void {
 }
 
 export function deleteCustomer(id: number): void {
+  assertCanWrite()
   run(`DELETE FROM customers WHERE id=?`, [id])
 }
 
@@ -66,6 +78,7 @@ export function listSuppliers(): Supplier[] {
 }
 
 export function createSupplier(s: Omit<Supplier, 'id' | 'createdAt'>): number {
+  assertCanWrite()
   const res = run(`INSERT INTO suppliers (name, phone, notes, createdAt) VALUES (?,?,?,?)`, [
     s.name,
     s.phone || '',
@@ -76,10 +89,12 @@ export function createSupplier(s: Omit<Supplier, 'id' | 'createdAt'>): number {
 }
 
 export function updateSupplier(s: Supplier): void {
+  assertCanWrite()
   run(`UPDATE suppliers SET name=?, phone=?, notes=? WHERE id=?`, [s.name, s.phone || '', s.notes || '', s.id])
 }
 
 export function deleteSupplier(id: number): void {
+  assertCanWrite()
   run(`DELETE FROM suppliers WHERE id=?`, [id])
 }
 
@@ -96,6 +111,7 @@ export function listProducts(search = ''): Product[] {
 }
 
 export function createProduct(p: Omit<Product, 'id' | 'createdAt'>): number {
+  assertCanWrite()
   const res = run(
     `INSERT INTO products (name, category, brand, supplierId, purchasePrice, stock, notes, createdAt) VALUES (?,?,?,?,?,?,?,?)`,
     [p.name, p.category || '', p.brand || '', p.supplierId ?? null, p.purchasePrice || 0, p.stock || 0, p.notes || '', now()]
@@ -104,6 +120,7 @@ export function createProduct(p: Omit<Product, 'id' | 'createdAt'>): number {
 }
 
 export function updateProduct(p: Product): void {
+  assertCanWrite()
   run(
     `UPDATE products SET name=?, category=?, brand=?, supplierId=?, purchasePrice=?, stock=?, notes=? WHERE id=?`,
     [p.name, p.category || '', p.brand || '', p.supplierId ?? null, p.purchasePrice || 0, p.stock || 0, p.notes || '', p.id]
@@ -111,11 +128,13 @@ export function updateProduct(p: Product): void {
 }
 
 export function deleteProduct(id: number): void {
+  assertCanWrite()
   run(`DELETE FROM products WHERE id=?`, [id])
 }
 
 /* ============================ المبيعات ============================ */
 export function createSale(input: NewSaleInput): number {
+  assertCanWrite()
   const salePrice = computeSalePrice(input.purchasePrice, input.quantity, input.profitMargin)
   const financed = round2(salePrice - input.downPayment)
   if (financed < 0) throw new Error('المقدم أكبر من سعر البيع')
@@ -203,12 +222,14 @@ function enrichSale(sale: Sale): SaleWithDetails {
 }
 
 export function deleteSale(id: number): void {
+  assertCanWrite()
   run(`DELETE FROM sales WHERE id=?`, [id])
 }
 
 /* ============================ الأقساط ============================ */
 // تسجيل دفعة على قسط؛ المبلغ المدفوع يضاف للقيمة الحالية
 export function payInstallment(installmentId: number, amount: number, paidDate: string): void {
+  assertCanWrite()
   const inst = get<Installment>(`SELECT * FROM installments WHERE id=?`, [installmentId])
   if (!inst) throw new Error('القسط غير موجود')
   const newPaid = round2(inst.paidAmount + amount)
@@ -222,11 +243,13 @@ export function payInstallment(installmentId: number, amount: number, paidDate: 
 
 // إلغاء سداد قسط (تصفير المدفوع)
 export function unpayInstallment(installmentId: number): void {
+  assertCanWrite()
   run(`UPDATE installments SET paidAmount=0, paidDate=NULL WHERE id=?`, [installmentId])
 }
 
 // سداد القسط بالكامل
 export function payInstallmentFull(installmentId: number, paidDate: string): void {
+  assertCanWrite()
   const inst = get<Installment>(`SELECT * FROM installments WHERE id=?`, [installmentId])
   if (!inst) throw new Error('القسط غير موجود')
   run(`UPDATE installments SET paidAmount=?, paidDate=? WHERE id=?`, [inst.amount, paidDate, installmentId])
@@ -388,6 +411,140 @@ export function getReport(from: string, to: string): ReportSummary {
     totalProfit,
     rows
   }
+}
+
+/* ============================ المستخدمون والجلسة ============================ */
+interface UserRow extends User {
+  passwordHash: string
+}
+
+let currentUser: User | null = null
+
+function rowToUser(r: UserRow): User {
+  return { id: r.id, username: r.username, name: r.name, role: r.role, createdAt: r.createdAt }
+}
+
+export function countUsers(): number {
+  const row = get<{ c: number }>(`SELECT COUNT(*) AS c FROM users`)
+  return row ? Number(row.c) : 0
+}
+
+function countOwners(): number {
+  const row = get<{ c: number }>(`SELECT COUNT(*) AS c FROM users WHERE role='owner'`)
+  return row ? Number(row.c) : 0
+}
+
+export function getSetupStatus(): SetupStatus {
+  return { needsSetup: countOwners() === 0 }
+}
+
+export function getCurrentUser(): User | null {
+  return currentUser
+}
+
+function requireOwner(): void {
+  if (!currentUser || currentUser.role !== 'owner') {
+    throw new Error('هذه العملية متاحة للمالك فقط')
+  }
+}
+
+export function login(username: string, password: string): User {
+  const row = get<UserRow>(`SELECT * FROM users WHERE username = ?`, [username.trim()])
+  if (!row || !verifyPassword(password, row.passwordHash)) {
+    throw new Error('اسم المستخدم أو كلمة المرور غير صحيحة')
+  }
+  currentUser = rowToUser(row)
+  return currentUser
+}
+
+export function logout(): void {
+  currentUser = null
+}
+
+export function listUsers(): User[] {
+  requireOwner()
+  return all<UserRow>(`SELECT * FROM users ORDER BY role DESC, name`).map(rowToUser)
+}
+
+function insertUser(input: NewUserInput): number {
+  if (!input.username.trim()) throw new Error('اسم المستخدم مطلوب')
+  if (!input.password || input.password.length < 4) throw new Error('كلمة المرور يجب ألا تقل عن 4 خانات')
+  const exists = get<{ id: number }>(`SELECT id FROM users WHERE username = ?`, [input.username.trim()])
+  if (exists) throw new Error('اسم المستخدم مستخدم بالفعل')
+  const res = run(
+    `INSERT INTO users (username, name, role, passwordHash, createdAt) VALUES (?,?,?,?,?)`,
+    [input.username.trim(), input.name || input.username.trim(), input.role, hashPassword(input.password), now()]
+  )
+  return res.lastInsertRowid
+}
+
+export function createUser(input: NewUserInput): number {
+  requireOwner()
+  return insertUser(input)
+}
+
+export function updateUser(id: number, name: string, role: UserRole): void {
+  requireOwner()
+  const target = get<UserRow>(`SELECT * FROM users WHERE id=?`, [id])
+  if (!target) throw new Error('المستخدم غير موجود')
+  // منع إزالة آخر مالك
+  if (target.role === 'owner' && role !== 'owner' && countOwners() <= 1) {
+    throw new Error('لا يمكن تغيير دور المالك الوحيد')
+  }
+  run(`UPDATE users SET name=?, role=? WHERE id=?`, [name || target.name, role, id])
+  if (currentUser && currentUser.id === id) currentUser = { ...currentUser, name: name || target.name, role }
+}
+
+export function changePassword(id: number, newPassword: string): void {
+  // المالك يغيّر لأي مستخدم؛ وأي مستخدم يغيّر كلمته
+  if (!currentUser || (currentUser.role !== 'owner' && currentUser.id !== id)) {
+    throw new Error('غير مصرح بتغيير كلمة المرور')
+  }
+  if (!newPassword || newPassword.length < 4) throw new Error('كلمة المرور يجب ألا تقل عن 4 خانات')
+  run(`UPDATE users SET passwordHash=? WHERE id=?`, [hashPassword(newPassword), id])
+}
+
+export function deleteUser(id: number): void {
+  requireOwner()
+  if (currentUser && currentUser.id === id) throw new Error('لا يمكن حذف حسابك الحالي')
+  const target = get<UserRow>(`SELECT * FROM users WHERE id=?`, [id])
+  if (!target) return
+  if (target.role === 'owner' && countOwners() <= 1) throw new Error('لا يمكن حذف المالك الوحيد')
+  run(`DELETE FROM users WHERE id=?`, [id])
+}
+
+/* ============================ الإعداد وأول تشغيل ============================ */
+export function firstRunSetup(input: FirstRunSetupInput): User {
+  if (countOwners() > 0) throw new Error('تم إعداد البرنامج بالفعل')
+  const ownerId = insertUser({
+    username: input.owner.username,
+    name: input.owner.name,
+    role: 'owner',
+    password: input.owner.password
+  })
+  // الترخيص
+  if (input.license.mode === 'trial') startTrial(input.license.trialDays)
+  else activateKey(input.license.key)
+  // مجلد النسخ الاحتياطي
+  setBackupDir(input.backupDir)
+  const owner = get<UserRow>(`SELECT * FROM users WHERE id=?`, [ownerId])
+  currentUser = rowToUser(owner as UserRow)
+  return currentUser
+}
+
+/* ============================ الترخيص (غلاف بصلاحية المالك) ============================ */
+export function licenseStatus(): LicenseStatus {
+  return getLicenseStatus()
+}
+
+export function activateLicense(key: string): LicenseStatus {
+  requireOwner()
+  return activateKey(key)
+}
+
+export function startLicenseTrial(days: number): LicenseStatus {
+  requireOwner()
+  return startTrial(days)
 }
 
 export { OVERDUE_THRESHOLD_DAYS, toISODate, persist }

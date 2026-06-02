@@ -5,6 +5,29 @@ const invoke = (channel: string, ...args: unknown[]): Promise<unknown> =>
   ipcRenderer.invoke(channel, ...args)
 
 const api: Api = {
+  getSetupStatus: () => invoke('setup:status') as never,
+  runSetup: (input) => invoke('setup:run', input) as never,
+  login: (username, password) => invoke('auth:login', username, password) as never,
+  logout: () => invoke('auth:logout') as never,
+  currentUser: () => invoke('auth:current') as never,
+
+  listUsers: () => invoke('users:list') as never,
+  createUser: (input) => invoke('users:create', input) as never,
+  updateUser: (id, name, role) => invoke('users:update', id, name, role) as never,
+  changePassword: (id, newPassword) => invoke('users:changePassword', id, newPassword) as never,
+  deleteUser: (id) => invoke('users:delete', id) as never,
+
+  licenseStatus: () => invoke('license:status') as never,
+  activateLicense: (key) => invoke('license:activate', key) as never,
+  startTrial: (days) => invoke('license:startTrial', days) as never,
+
+  chooseDir: () => invoke('dialog:chooseDir') as never,
+
+  backupSettings: () => invoke('backup:settings') as never,
+  backupNow: () => invoke('backup:now') as never,
+  chooseBackupDir: () => invoke('backup:chooseDir') as never,
+  clearBackupDir: () => invoke('backup:clearDir') as never,
+
   listCustomers: (search) => invoke('customers:list', search) as never,
   getCustomer: (id) => invoke('customers:get', id) as never,
   createCustomer: (c) => invoke('customers:create', c) as never,

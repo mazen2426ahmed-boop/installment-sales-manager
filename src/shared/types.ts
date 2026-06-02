@@ -147,3 +147,60 @@ export interface ApiResult<T> {
   data?: T
   error?: string
 }
+
+/* ============================ المستخدمون والصلاحيات ============================ */
+export type UserRole = 'owner' | 'seller'
+
+export interface User {
+  id: number
+  username: string
+  name: string
+  role: UserRole
+  createdAt: string
+}
+
+export interface NewUserInput {
+  username: string
+  name: string
+  role: UserRole
+  password: string
+}
+
+/* ============================ الترخيص ============================ */
+export type LicenseType = 'trial' | 'licensed'
+
+export interface LicenseStatus {
+  configured: boolean // هل تم تفعيل ترخيص/تجربة
+  type: LicenseType | null
+  activatedAt: string | null
+  expiresAt: string | null // YYYY-MM-DD
+  daysLeft: number
+  expired: boolean
+  readOnly: boolean // وضع العرض فقط (لا تُقبل إضافة بيانات)
+  issuedTo: string | null
+}
+
+/* ============================ الإعداد وأول تشغيل ============================ */
+export interface SetupStatus {
+  needsSetup: boolean // لا يوجد مالك بعد
+}
+
+export interface FirstRunSetupInput {
+  owner: { username: string; name: string; password: string }
+  license: { mode: 'trial'; trialDays: number } | { mode: 'key'; key: string }
+  backupDir: string | null
+}
+
+/* ============================ النسخ الاحتياطي ============================ */
+export interface BackupFileInfo {
+  name: string
+  path: string
+  size: number
+  createdAt: string
+}
+
+export interface BackupSettings {
+  backupDir: string | null
+  lastDailyBackup: string | null // YYYY-MM-DD
+  localBackups: BackupFileInfo[]
+}

@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react'
 import Icon from '../components/Icon'
 import { EmptyState, Spinner } from '../components/ui'
 import { useToast } from '../components/Toast'
+import { useApp } from '../context/AppContext'
 import { formatDate, formatMoney, todayInput } from '../lib/format'
 import type { DueAlert } from '../../../shared/types'
 
 export default function Alerts({ onChanged }: { onChanged: () => void }): React.JSX.Element {
   const { notify } = useToast()
+  const { readOnly } = useApp()
   const [due, setDue] = useState<DueAlert[]>([])
   const [overdue90, setOverdue90] = useState<DueAlert[]>([])
   const [loading, setLoading] = useState(true)
@@ -77,7 +79,7 @@ export default function Alerts({ onChanged }: { onChanged: () => void }): React.
                   )}
                 </td>
                 <td>
-                  <button className="btn btn-primary btn-sm" onClick={() => pay(a)}>
+                  <button className="btn btn-primary btn-sm" onClick={() => pay(a)} disabled={readOnly}>
                     <Icon name="check" size={14} /> سداد
                   </button>
                 </td>

@@ -3,6 +3,7 @@ import Icon from '../components/Icon'
 import Modal from '../components/Modal'
 import { EmptyState, Spinner } from '../components/ui'
 import { useToast } from '../components/Toast'
+import { useApp } from '../context/AppContext'
 import { formatDate } from '../lib/format'
 import type { Customer } from '../../../shared/types'
 
@@ -16,6 +17,7 @@ const empty: Omit<Customer, 'id' | 'createdAt'> = {
 
 export default function Customers(): React.JSX.Element {
   const { notify } = useToast()
+  const { readOnly } = useApp()
   const [list, setList] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -113,13 +115,13 @@ export default function Customers(): React.JSX.Element {
           <button className="btn btn-outline" onClick={template}>
             <Icon name="file" size={16} /> قالب
           </button>
-          <button className="btn btn-outline" onClick={importExcel}>
+          <button className="btn btn-outline" onClick={importExcel} disabled={readOnly}>
             <Icon name="upload" size={16} /> استيراد Excel
           </button>
           <button className="btn btn-outline" onClick={exportExcel}>
             <Icon name="download" size={16} /> تصدير Excel
           </button>
-          <button className="btn btn-primary" onClick={openNew}>
+          <button className="btn btn-primary" onClick={openNew} disabled={readOnly}>
             <Icon name="plus" size={16} /> عميل جديد
           </button>
         </div>
@@ -156,10 +158,10 @@ export default function Customers(): React.JSX.Element {
                   <td className="muted">{formatDate(c.createdAt)}</td>
                   <td>
                     <div className="table-actions">
-                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit(c)}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => openEdit(c)} disabled={readOnly}>
                         <Icon name="edit" size={16} />
                       </button>
-                      <button className="btn btn-ghost btn-sm" onClick={() => remove(c)}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => remove(c)} disabled={readOnly}>
                         <Icon name="trash" size={16} />
                       </button>
                     </div>

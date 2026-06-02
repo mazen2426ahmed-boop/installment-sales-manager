@@ -3,12 +3,14 @@ import Icon from '../components/Icon'
 import Modal from '../components/Modal'
 import { EmptyState, Spinner, StatusBadge } from '../components/ui'
 import { useToast } from '../components/Toast'
+import { useApp } from '../context/AppContext'
 import { formatDate, formatMoney, todayInput } from '../lib/format'
 import { addMonths, buildInstallmentSchedule, computeSalePrice, round2 } from '../../../shared/finance'
 import type { Customer, NewSaleInput, Product, SaleWithDetails } from '../../../shared/types'
 
 export default function Sales({ onChanged }: { onChanged: () => void }): React.JSX.Element {
   const { notify } = useToast()
+  const { readOnly } = useApp()
   const [list, setList] = useState<SaleWithDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -51,7 +53,7 @@ export default function Sales({ onChanged }: { onChanged: () => void }): React.J
           <Icon name="search" size={18} />
           <input placeholder="بحث باسم العميل أو المنتج..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <button className="btn btn-primary" onClick={() => setShowNew(true)}>
+        <button className="btn btn-primary" onClick={() => setShowNew(true)} disabled={readOnly}>
           <Icon name="plus" size={16} /> عملية بيع جديدة
         </button>
       </div>
@@ -103,7 +105,7 @@ export default function Sales({ onChanged }: { onChanged: () => void }): React.J
                         <button className="btn btn-ghost btn-sm" onClick={() => setDetailsId(s.id)} title="التفاصيل والأقساط">
                           <Icon name="eye" size={16} />
                         </button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => remove(s)}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => remove(s)} disabled={readOnly}>
                           <Icon name="trash" size={16} />
                         </button>
                       </div>
@@ -394,6 +396,7 @@ function SaleDetailsModal({
   onChanged: () => void
 }): React.JSX.Element {
   const { notify } = useToast()
+  const { readOnly } = useApp()
   const [sale, setSale] = useState<SaleWithDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [payFor, setPayFor] = useState<{ instId: number; amount: number; max: number } | null>(null)
@@ -524,13 +527,14 @@ function SaleDetailsModal({
                     <td>
                       <div className="table-actions">
                         {inst.status === 'paid' ? (
-                          <button className="btn btn-ghost btn-sm" onClick={() => unpay(inst.id)}>
+                          <button className="btn btn-ghost btn-sm" onClick={() => unpay(inst.id)} disabled={readOnly}>
                             إلغاء السداد
                           </button>
                         ) : (
                           <>
                             <button
                               className="btn btn-outline btn-sm"
+                              disabled={readOnly}
                               onClick={() => {
                                 setPayFor({ instId: inst.id, amount: inst.amount, max: inst.remaining ?? inst.amount })
                                 setPayAmount(round2((inst.remaining ?? inst.amount)))
@@ -539,7 +543,7 @@ function SaleDetailsModal({
                             >
                               <Icon name="money" size={14} /> دفعة
                             </button>
-                            <button className="btn btn-primary btn-sm" onClick={() => payFull(inst.id)}>
+                            <button className="btn btn-primary btn-sm" onClick={() => payFull(inst.id)} disabled={readOnly}>
                               <Icon name="check" size={14} /> سداد
                             </button>
                           </>
