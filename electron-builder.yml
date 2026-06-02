@@ -1,0 +1,32 @@
+appId: com.mazen.installmentsales
+productName: إدارة البيع بالتقسيط
+copyright: Copyright © 2026
+directories:
+  output: dist
+  buildResources: build
+files:
+  - out/**/*
+  - node_modules/sql.js/dist/sql-wasm.wasm
+  - package.json
+asarUnpack:
+  - "**/node_modules/sql.js/dist/sql-wasm.wasm"
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: ${productName}-Setup-${version}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: إدارة البيع بالتقسيط
+  installerLanguages:
+    - ar_SA
+    - en_US
+linux:
+  target:
+    - AppImage
+  category: Office

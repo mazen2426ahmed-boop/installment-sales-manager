@@ -1,0 +1,43 @@
+{
+  "name": "installment-sales-manager",
+  "version": "1.0.0",
+  "description": "تطبيق إدارة البيع بالتقسيط للأجهزة الكهربائية والمنزلية",
+  "main": "out/main/index.js",
+  "author": "mazen2426ahmed",
+  "license": "MIT",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "start": "electron-vite preview",
+    "build": "electron-vite build",
+    "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
+    "typecheck:web": "tsc --noEmit -p tsconfig.web.json --composite false",
+    "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "lint": "eslint . --ext .ts,.tsx",
+    "build:win": "electron-vite build && electron-builder --win --config electron-builder.yml",
+    "build:linux": "electron-vite build && electron-builder --linux --config electron-builder.yml"
+  },
+  "dependencies": {
+    "sql.js": "^1.10.3",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@types/sql.js": "^1.4.9",
+    "@typescript-eslint/eslint-plugin": "^7.16.0",
+    "@typescript-eslint/parser": "^7.16.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "electron": "^31.2.1",
+    "electron-builder": "^24.13.3",
+    "electron-vite": "^2.3.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.34.3",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.12.7",
+    "typescript": "^5.5.3",
+    "vite": "^5.3.3"
+  }
+}
