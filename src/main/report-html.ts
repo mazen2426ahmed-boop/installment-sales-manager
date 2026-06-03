@@ -9,6 +9,7 @@ export function buildReportHtml(report: ReportSummary): string {
       (r, idx) => `
       <tr>
         <td>${idx + 1}</td>
+        <td>${escapeHtml(r.receiptNo)}</td>
         <td>${r.saleDate}</td>
         <td>${escapeHtml(r.customerName)}</td>
         <td>${escapeHtml(r.productName)} ${escapeHtml(r.brand)}</td>
@@ -57,14 +58,14 @@ export function buildReportHtml(report: ReportSummary): string {
   <table>
     <thead>
       <tr>
-        <th>#</th><th>التاريخ</th><th>العميل</th><th>المنتج</th>
+        <th>#</th><th>رقم الإيصال</th><th>التاريخ</th><th>العميل</th><th>المنتج</th>
         <th>سعر البيع</th><th>المقدم</th><th>الممول</th><th>المحصّل</th><th>المتبقي</th><th>الربح</th>
       </tr>
     </thead>
-    <tbody>${rows || '<tr><td colspan="10">لا توجد بيانات في هذه الفترة</td></tr>'}</tbody>
+    <tbody>${rows || '<tr><td colspan="11">لا توجد بيانات في هذه الفترة</td></tr>'}</tbody>
     <tfoot>
       <tr>
-        <td colspan="4">الإجمالي</td>
+        <td colspan="5">الإجمالي</td>
         <td>${fmt(report.totalSales)}</td>
         <td>${fmt(report.totalDownPayments)}</td>
         <td>${fmt(report.totalFinanced)}</td>

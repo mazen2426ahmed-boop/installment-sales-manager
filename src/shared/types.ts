@@ -48,6 +48,7 @@ export interface Installment {
 
 export interface Sale {
   id: number
+  receiptNo: string
   customerId: number
   productId: number | null
   productName: string
@@ -74,6 +75,7 @@ export interface SaleWithDetails extends Sale {
 }
 
 export interface NewSaleInput {
+  receiptNo?: string // يُترك فارغاً للتوليد التلقائي
   customerId: number
   productId: number | null
   productName: string
@@ -117,6 +119,7 @@ export interface DueAlert {
 
 export interface ReportRow {
   saleId: number
+  receiptNo: string
   saleDate: string
   customerName: string
   productName: string

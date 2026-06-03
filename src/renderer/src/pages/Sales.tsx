@@ -51,7 +51,7 @@ export default function Sales({ onChanged }: { onChanged: () => void }): React.J
       <div className="page-header">
         <div className="search-box">
           <Icon name="search" size={18} />
-          <input placeholder="بحث باسم العميل أو المنتج..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input placeholder="بحث برقم الإيصال أو اسم العميل..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <button className="btn btn-primary" onClick={() => setShowNew(true)} disabled={readOnly}>
           <Icon name="plus" size={16} /> عملية بيع جديدة
@@ -69,6 +69,7 @@ export default function Sales({ onChanged }: { onChanged: () => void }): React.J
           <table>
             <thead>
               <tr>
+                <th>رقم الإيصال</th>
                 <th>التاريخ</th>
                 <th>العميل</th>
                 <th>المنتج</th>
@@ -84,6 +85,7 @@ export default function Sales({ onChanged }: { onChanged: () => void }): React.J
                 const progress = s.financedAmount > 0 ? (s.totalPaid / s.financedAmount) * 100 : 100
                 return (
                   <tr key={s.id}>
+                    <td><span className="chip">{s.receiptNo}</span></td>
                     <td className="muted">{formatDate(s.saleDate)}</td>
                     <td style={{ fontWeight: 600 }}>{s.customerName}</td>
                     <td>
@@ -144,6 +146,7 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
   const [saving, setSaving] = useState(false)
 
   const [form, setForm] = useState<NewSaleInput>({
+    receiptNo: '',
     customerId: 0,
     productId: null,
     productName: '',
@@ -236,6 +239,15 @@ function NewSaleModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
       }
     >
       <div className="form-grid">
+        <div className="field">
+          <label>رقم الإيصال</label>
+          <input
+            value={form.receiptNo}
+            onChange={(e) => setForm({ ...form, receiptNo: e.target.value })}
+            placeholder="يُترك فارغاً للتوليد التلقائي"
+          />
+          <span className="hint">المعرّف الأساسي للعملية — يمكن البحث به</span>
+        </div>
         <div className="field">
           <label>العميل *</label>
           <select value={form.customerId} onChange={(e) => setForm({ ...form, customerId: Number(e.target.value) })}>
@@ -454,6 +466,12 @@ function SaleDetailsModal({
       ) : (
         <>
           <div className="form-grid" style={{ marginBottom: 12 }}>
+            <div className="field">
+              <label>رقم الإيصال</label>
+              <div>
+                <span className="chip">{sale.receiptNo}</span>
+              </div>
+            </div>
             <div className="field">
               <label>العميل</label>
               <div className="row">

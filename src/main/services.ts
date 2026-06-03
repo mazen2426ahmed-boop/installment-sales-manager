@@ -133,6 +133,14 @@ export function deleteProduct(id: number): void {
 }
 
 /* ============================ المبيعات ============================ */
+function nextReceiptNo(): string {
+  const row = get<{ m: number }>(
+    `SELECT COALESCE(MAX(CAST(receiptNo AS INTEGER)), 0) AS m FROM sales WHERE receiptNo GLOB '[0-9]*'`
+  )
+  const next = (row ? Number(row.m) : 0) + 1
+  return String(next).padStart(5, '0')
+}
+
 export function createSale(input: NewSaleInput): number {
   assertCanWrite()
   const salePrice = computeSalePrice(input.purchasePrice, input.quantity, input.profitMargin)
@@ -140,11 +148,17 @@ export function createSale(input: NewSaleInput): number {
   if (financed < 0) throw new Error('المقدم أكبر من سعر البيع')
   const schedule = buildInstallmentSchedule(financed, input.installmentsCount, input.firstInstallmentDate)
 
+  const receiptNo = (input.receiptNo ?? '').trim() || nextReceiptNo()
+  if (get<{ id: number }>(`SELECT id FROM sales WHERE receiptNo = ?`, [receiptNo])) {
+    throw new Error('رقم الإيصال مستخدم من قبل، اختر رقماً آخر')
+  }
+
   return transaction(() => {
     const saleId = runNoPersist(
-      `INSERT INTO sales (customerId, productId, productName, brand, quantity, purchasePrice, profitMargin, salePrice, downPayment, installmentsCount, saleDate, firstInstallmentDate, notes, createdAt)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      `INSERT INTO sales (receiptNo, customerId, productId, productName, brand, quantity, purchasePrice, profitMargin, salePrice, downPayment, installmentsCount, saleDate, firstInstallmentDate, notes, createdAt)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [
+        receiptNo,
         input.customerId,
         input.productId ?? null,
         input.productName,
@@ -181,8 +195,8 @@ export function listSales(search = ''): SaleWithDetails[] {
     const q = `%${search.trim()}%`
     rows = all<Sale>(
       `SELECT s.* FROM sales s JOIN customers c ON c.id = s.customerId
-       WHERE c.name LIKE ? OR s.productName LIKE ? OR s.brand LIKE ? ORDER BY s.saleDate DESC`,
-      [q, q, q]
+       WHERE s.receiptNo LIKE ? OR c.name LIKE ? OR s.productName LIKE ? OR s.brand LIKE ? ORDER BY s.saleDate DESC`,
+      [q, q, q, q]
     )
   } else {
     rows = all<Sale>(`SELECT * FROM sales ORDER BY saleDate DESC`)
@@ -380,6 +394,7 @@ export function getReport(from: string, to: string): ReportSummary {
     const collected = round2(s.downPayment + det.totalPaid)
     rows.push({
       saleId: s.id,
+      receiptNo: s.receiptNo,
       saleDate: s.saleDate,
       customerName: det.customerName,
       productName: s.productName,

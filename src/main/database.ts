@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS products (
 
 CREATE TABLE IF NOT EXISTS sales (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  receiptNo TEXT,
   customerId INTEGER NOT NULL,
   productId INTEGER,
   productName TEXT NOT NULL,
@@ -93,7 +94,31 @@ CREATE TABLE IF NOT EXISTS app_config (
 CREATE INDEX IF NOT EXISTS idx_inst_sale ON installments(saleId);
 CREATE INDEX IF NOT EXISTS idx_inst_due ON installments(dueDate);
 CREATE INDEX IF NOT EXISTS idx_sales_customer ON sales(customerId);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_sales_receipt ON sales(receiptNo);
 `
+
+// ترقية قواعد البيانات القديمة: إضافة الأعمدة الناقصة قبل تطبيق المخطط
+function migrateSchema(d: SqlJsDatabase): void {
+  const tableExists =
+    d.exec(`SELECT name FROM sqlite_master WHERE type='table' AND name='sales'`).length > 0
+  if (tableExists) {
+    const cols = d.exec(`PRAGMA table_info(sales)`)
+    const names = cols.length ? cols[0].values.map((v) => String(v[1])) : []
+    if (!names.includes('receiptNo')) {
+      d.run(`ALTER TABLE sales ADD COLUMN receiptNo TEXT`)
+    }
+  }
+  // تطبيق المخطط (يُنشئ الجداول/الفهارس بما فيها فهرس رقم الإيصال الفريد)
+  d.run(SCHEMA)
+  // تعبئة رقم إيصال للمبيعات القديمة التي لا تملك واحداً
+  const missing = d.exec(`SELECT id FROM sales WHERE receiptNo IS NULL OR receiptNo = '' ORDER BY id`)
+  if (missing.length) {
+    for (const row of missing[0].values) {
+      const id = Number(row[0])
+      d.run(`UPDATE sales SET receiptNo = ? WHERE id = ?`, [String(id).padStart(5, '0'), id])
+    }
+  }
+}
 
 export async function initDatabase(): Promise<void> {
   const SQL = await initSqlJs({ locateFile: () => resolveWasmPath() })
@@ -107,7 +132,7 @@ export async function initDatabase(): Promise<void> {
   } else {
     db = new SQL.Database()
   }
-  db.run(SCHEMA)
+  migrateSchema(db)
   persist()
 }
 
@@ -150,7 +175,7 @@ export async function restoreFrom(sourcePath: string): Promise<void> {
   test.close()
   writeFileSync(dbFilePath, buf)
   db = new SQL.Database(buf)
-  db.run(SCHEMA)
+  migrateSchema(db)
   persist()
 }
 

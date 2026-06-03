@@ -39,6 +39,7 @@ export function exportSales(filePath: string): number {
   const sales = listSales()
   const salesRows = sales.map((s) => ({
     'رقم': s.id,
+    'رقم الإيصال': s.receiptNo,
     'التاريخ': s.saleDate,
     'العميل': s.customerName,
     'الهاتف': s.customerPhone,
@@ -60,6 +61,7 @@ export function exportSales(filePath: string): number {
     for (const i of s.installments) {
       instRows.push({
         'رقم البيع': s.id,
+        'رقم الإيصال': s.receiptNo,
         'العميل': s.customerName,
         'المنتج': s.productName,
         'رقم القسط': i.number,
@@ -83,6 +85,7 @@ export function exportReport(filePath: string, from: string, to: string): number
   const report = getReport(from, to)
   const rows = report.rows.map((r) => ({
     'رقم البيع': r.saleId,
+    'رقم الإيصال': r.receiptNo,
     'التاريخ': r.saleDate,
     'العميل': r.customerName,
     'المنتج': r.productName,
@@ -96,6 +99,7 @@ export function exportReport(filePath: string, from: string, to: string): number
   }))
   rows.push({
     'رقم البيع': '' as never,
+    'رقم الإيصال': '' as never,
     'التاريخ': '' as never,
     'العميل': 'الإجمالي' as never,
     'المنتج': '' as never,
