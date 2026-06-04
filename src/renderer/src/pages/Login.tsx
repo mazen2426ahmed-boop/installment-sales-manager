@@ -28,8 +28,8 @@ export default function Login({ onLoggedIn }: { onLoggedIn: (u: User) => void })
         <div className="auth-logo">
           <Icon name="wallet" size={34} />
         </div>
-        <h1>إدارة البيع بالتقسيط</h1>
-        <p className="auth-sub">سجّل الدخول للمتابعة</p>
+        <h1>اقساط</h1>
+        <p className="auth-sub">تطبيق إدارة البيع بالتقسيط — سجّل الدخول للمتابعة</p>
 
         <div className="field">
           <label>اسم المستخدم</label>
@@ -57,7 +57,7 @@ export default function Login({ onLoggedIn }: { onLoggedIn: (u: User) => void })
           <Icon name="lock" size={16} /> {busy ? 'جارٍ الدخول...' : 'تسجيل الدخول'}
         </button>
       </form>
-      <div className="auth-foot">الإصدار 1.0.0 — يعمل بدون إنترنت</div>
+      <div className="auth-foot">الإصدار 1.0.0 — يعمل بدون إنترنت — برمجة م. أحمد الفولي</div>
     </div>
   )
 }

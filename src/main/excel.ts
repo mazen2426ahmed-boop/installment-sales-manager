@@ -95,7 +95,7 @@ export function exportReport(filePath: string, from: string, to: string): number
     'المبلغ الممول': r.financedAmount,
     'المحصّل': r.collected,
     'المتبقي': r.outstanding,
-    'الربح': r.profit
+    'الربح المُحقَّق': r.profit
   }))
   rows.push({
     'رقم البيع': '' as never,
@@ -109,7 +109,7 @@ export function exportReport(filePath: string, from: string, to: string): number
     'المبلغ الممول': report.totalFinanced,
     'المحصّل': report.totalCollected,
     'المتبقي': report.totalOutstanding,
-    'الربح': report.totalProfit
+    'الربح المُحقَّق': report.totalProfit
   })
   writeSheet(filePath, rows, 'تقرير')
   return report.rows.length

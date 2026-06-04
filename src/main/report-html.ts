@@ -53,13 +53,13 @@ export function buildReportHtml(report: ReportSummary): string {
     <div class="card"><div class="label">إجمالي المقدمات</div><div class="value">${fmt(report.totalDownPayments)}</div></div>
     <div class="card"><div class="label">المحصّل</div><div class="value">${fmt(report.totalCollected)}</div></div>
     <div class="card"><div class="label">المتبقي</div><div class="value">${fmt(report.totalOutstanding)}</div></div>
-    <div class="card"><div class="label">إجمالي الأرباح</div><div class="value">${fmt(report.totalProfit)}</div></div>
+    <div class="card"><div class="label">الأرباح المُحقَّقة</div><div class="value">${fmt(report.totalProfit)}</div></div>
   </div>
   <table>
     <thead>
       <tr>
         <th>#</th><th>رقم الإيصال</th><th>التاريخ</th><th>العميل</th><th>المنتج</th>
-        <th>سعر البيع</th><th>المقدم</th><th>الممول</th><th>المحصّل</th><th>المتبقي</th><th>الربح</th>
+        <th>سعر البيع</th><th>المقدم</th><th>الممول</th><th>المحصّل</th><th>المتبقي</th><th>الربح المُحقَّق</th>
       </tr>
     </thead>
     <tbody>${rows || '<tr><td colspan="11">لا توجد بيانات في هذه الفترة</td></tr>'}</tbody>
@@ -75,7 +75,7 @@ export function buildReportHtml(report: ReportSummary): string {
       </tr>
     </tfoot>
   </table>
-  <div class="footer">تم إنشاء التقرير بواسطة برنامج إدارة البيع بالتقسيط — ${new Date().toLocaleString('ar-EG')}</div>
+  <div class="footer">تم إنشاء التقرير بواسطة «اقساط» تطبيق إدارة البيع بالتقسيط — برمجة م. أحمد الفولي — ${new Date().toLocaleString('ar-EG')}</div>
 </body>
 </html>`
 }

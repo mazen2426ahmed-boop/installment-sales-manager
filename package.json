@@ -1,9 +1,9 @@
 {
   "name": "installment-sales-manager",
   "version": "1.0.0",
-  "description": "تطبيق إدارة البيع بالتقسيط للأجهزة الكهربائية والمنزلية",
+  "description": "«اقساط» تطبيق إدارة البيع بالتقسيط للأجهزة الكهربائية والمنزلية",
   "main": "out/main/index.js",
-  "author": "mazen2426ahmed",
+  "author": "م. أحمد الفولي",
   "license": "MIT",
   "scripts": {
     "dev": "electron-vite dev",

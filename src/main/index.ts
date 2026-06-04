@@ -6,7 +6,7 @@ import * as excel from './excel'
 import { assertCanWrite } from './license'
 import { ensureDailyBackup, backupNow, getBackupSettings, setBackupDir } from './backup'
 import { buildReportHtml } from './report-html'
-import type { ApiResult, NewUserInput, UserRole, FirstRunSetupInput } from '../shared/types'
+import type { ApiResult, NewUserInput, UserRole, FirstRunSetupInput, LicenseGenInput } from '../shared/types'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -18,7 +18,7 @@ function createWindow(): void {
     minHeight: 680,
     show: false,
     autoHideMenuBar: true,
-    title: 'إدارة البيع بالتقسيط',
+    title: 'اقساط — تطبيق إدارة البيع بالتقسيط',
     backgroundColor: '#0f172a',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -71,6 +71,9 @@ function registerIpc(): void {
   handle('license:status', () => svc.licenseStatus())
   handle('license:activate', (key: string) => svc.activateLicense(key))
   handle('license:startTrial', (days: number) => svc.startLicenseTrial(days))
+  handle('license:machineId', () => svc.machineId())
+  handle('license:devAccess', (passcode: string) => svc.checkDevAccess(passcode))
+  handle('license:generate', (input: LicenseGenInput) => svc.generateLicenseKey(input))
 
   // العملاء
   handle('customers:list', (search?: string) => svc.listCustomers(search ?? ''))

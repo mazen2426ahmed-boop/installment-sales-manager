@@ -154,8 +154,8 @@ function Shell({
             <Icon name="wallet" size={24} />
           </div>
           <div className="brand-text">
-            <h1>البيع بالتقسيط</h1>
-            <span>إدارة الأجهزة والأقساط</span>
+            <h1>اقساط</h1>
+            <span>تطبيق إدارة البيع بالتقسيط</span>
           </div>
         </div>
         <nav className="nav">

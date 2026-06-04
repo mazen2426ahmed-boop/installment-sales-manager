@@ -153,14 +153,36 @@ export default function Settings(): React.JSX.Element {
         </div>
       </div>
 
-      <div className="card card-pad">
+      <div className="card card-pad" style={{ marginBottom: 18 }}>
         <div className="section-title">
           <Icon name="settings" size={18} /> عن البرنامج
         </div>
-        <p className="muted">برنامج إدارة البيع بالتقسيط للأجهزة الكهربائية والمنزلية — الإصدار 1.0.0</p>
+        <p className="muted">
+          «اقساط» — تطبيق إدارة البيع بالتقسيط للأجهزة الكهربائية والمنزلية — الإصدار 1.0.0
+        </p>
         <p className="muted" style={{ marginTop: 6 }}>
           يعمل بالكامل بدون إنترنت، وتُحفظ جميع البيانات محلياً على جهازك.
         </p>
+      </div>
+
+      <div className="card card-pad">
+        <div className="section-title">
+          <Icon name="user" size={18} /> المبرمج والتواصل
+        </div>
+        <div className="dev-info">
+          <div className="dev-line dev-name">
+            <Icon name="user" size={16} /> م. أحمد الفولي
+          </div>
+          <a href="tel:01070276039">
+            <Icon name="phone" size={16} /> موبايل: 01070276039
+          </a>
+          <a href="https://wa.me/201284537045" target="_blank" rel="noreferrer">
+            <Icon name="chat" size={16} /> واتساب: 01284537045
+          </a>
+          <a href="mailto:ahmedfouly08@gmail.com">
+            <Icon name="mail" size={16} /> البريد: ahmedfouly08@gmail.com
+          </a>
+        </div>
       </div>
     </div>
   )

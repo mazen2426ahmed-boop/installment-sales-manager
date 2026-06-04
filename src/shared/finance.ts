@@ -23,6 +23,21 @@ export function computeProfit(
   return round2(salePrice - purchasePrice * quantity)
 }
 
+// الربح المُحقَّق محاسبياً (أساس نقدي): يُعترف بالربح تناسبياً مع ما تم تحصيله فعلاً
+// = (المبلغ المحصّل ÷ سعر البيع) × إجمالي ربح الصفقة
+// المبلغ المحصّل = المقدم + مجموع الأقساط المسددة
+export function computeRealizedProfit(
+  purchasePrice: number,
+  quantity: number,
+  salePrice: number,
+  collected: number
+): number {
+  if (salePrice <= 0) return 0
+  const totalProfit = salePrice - purchasePrice * quantity
+  const ratio = Math.max(0, Math.min(1, collected / salePrice))
+  return round2(totalProfit * ratio)
+}
+
 // إضافة عدد من الأشهر لتاريخ مع الحفاظ على اليوم وتعديله لآخر يوم في الشهر عند الحاجة
 export function addMonths(isoDate: string, months: number): string {
   const d = new Date(isoDate + 'T00:00:00')

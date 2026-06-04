@@ -6,15 +6,20 @@
     </linearGradient>
   </defs>
   <rect x="16" y="16" width="480" height="480" rx="110" fill="url(#bg)"/>
-  <g fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M150 175 h180 a40 40 0 0 1 40 40 v120 a40 40 0 0 1 -40 40 h-180 a40 40 0 0 1 -40 -40 v-120 a40 40 0 0 1 40 -40 z"/>
-    <path d="M110 215 v-30 a40 40 0 0 1 40 -40 h150"/>
+  <!-- محفظة الأقساط -->
+  <g fill="none" stroke="#ffffff" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" opacity="0.95">
+    <path d="M150 120 h150 a36 36 0 0 1 36 36 v92 a36 36 0 0 1 -36 36 h-150 a36 36 0 0 1 -36 -36 v-92 a36 36 0 0 1 36 -36 z"/>
   </g>
-  <circle cx="330" cy="295" r="22" fill="#ffffff"/>
-  <g fill="#ffffff">
-    <circle cx="180" cy="400" r="12"/>
-    <circle cx="230" cy="400" r="12"/>
-    <circle cx="280" cy="400" r="12"/>
-    <circle cx="330" cy="400" r="12"/>
+  <circle cx="300" cy="202" r="18" fill="#ffffff"/>
+  <!-- نقاط الأقساط -->
+  <g fill="#ffffff" opacity="0.95">
+    <circle cx="176" cy="300" r="11"/>
+    <circle cx="226" cy="300" r="11"/>
+    <circle cx="276" cy="300" r="11"/>
+    <circle cx="326" cy="300" r="11"/>
   </g>
+  <!-- اسم التطبيق -->
+  <text x="256" y="430" text-anchor="middle" direction="rtl"
+        font-family="Amiri, 'Scheherazade New', Scheherazade, 'KacstOne', sans-serif"
+        font-size="150" font-weight="700" fill="#ffffff">اقساط</text>
 </svg>

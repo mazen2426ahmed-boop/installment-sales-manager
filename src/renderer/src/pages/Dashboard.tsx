@@ -44,7 +44,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: string) => v
         <StatCard icon="cart" label="عدد عمليات البيع" value={String(stats.salesCount)} color="#0d9488" />
         <StatCard icon="money" label="إجمالي المبيعات" value={formatMoney(stats.totalSales)} suffix="ج.م" color="#0ea5e9" />
         <StatCard icon="wallet" label="إجمالي المحصّل" value={formatMoney(stats.totalCollected)} suffix="ج.م" color="#16a34a" />
-        <StatCard icon="trending" label="إجمالي الأرباح" value={formatMoney(stats.totalProfit)} suffix="ج.م" color="#8b5cf6" />
+        <StatCard icon="trending" label="الأرباح المُحقَّقة (محصّلة)" value={formatMoney(stats.totalProfit)} suffix="ج.م" color="#8b5cf6" />
         <StatCard icon="alert" label="المتبقي على العملاء" value={formatMoney(stats.totalOutstanding)} suffix="ج.م" color="#f59e0b" />
       </div>
 

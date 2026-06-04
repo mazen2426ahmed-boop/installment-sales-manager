@@ -20,6 +20,9 @@ const api: Api = {
   licenseStatus: () => invoke('license:status') as never,
   activateLicense: (key) => invoke('license:activate', key) as never,
   startTrial: (days) => invoke('license:startTrial', days) as never,
+  getMachineId: () => invoke('license:machineId') as never,
+  checkDevAccess: (passcode) => invoke('license:devAccess', passcode) as never,
+  generateLicense: (input) => invoke('license:generate', input) as never,
 
   chooseDir: () => invoke('dialog:chooseDir') as never,
 

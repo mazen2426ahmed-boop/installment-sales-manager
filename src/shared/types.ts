@@ -181,6 +181,24 @@ export interface LicenseStatus {
   expired: boolean
   readOnly: boolean // وضع العرض فقط (لا تُقبل إضافة بيانات)
   issuedTo: string | null
+  machineId: string // معرّف الجهاز الحالي (بصمة العتاد)
+  boundMachineId: string | null // الجهاز المربوط به المفتاح الحالي (إن وُجد)
+}
+
+// مُدخلات توليد مفتاح ترخيص داخل البرنامج (أداة المطوّر)
+export interface LicenseGenInput {
+  passcode: string // رمز المطوّر للوصول لأداة التوليد
+  machineId: string // معرّف الجهاز المراد ربط المفتاح به (فارغ = غير مربوط)
+  days?: number // عدد أيام الصلاحية (يُستخدم إن لم يُحدَّد تاريخ انتهاء)
+  exp?: string // تاريخ الانتهاء YYYY-MM-DD (اختياري)
+  to?: string // جهة الإصدار (اختياري)
+}
+
+export interface LicenseKeyResult {
+  key: string
+  exp: string
+  machineId: string | null
+  to: string | null
 }
 
 /* ============================ الإعداد وأول تشغيل ============================ */

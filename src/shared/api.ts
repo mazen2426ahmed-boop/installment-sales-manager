@@ -14,6 +14,8 @@ import type {
   SetupStatus,
   FirstRunSetupInput,
   LicenseStatus,
+  LicenseGenInput,
+  LicenseKeyResult,
   BackupSettings
 } from './types'
 
@@ -37,6 +39,9 @@ export interface Api {
   licenseStatus(): Promise<ApiResult<LicenseStatus>>
   activateLicense(key: string): Promise<ApiResult<LicenseStatus>>
   startTrial(days: number): Promise<ApiResult<LicenseStatus>>
+  getMachineId(): Promise<ApiResult<string>>
+  checkDevAccess(passcode: string): Promise<ApiResult<boolean>>
+  generateLicense(input: LicenseGenInput): Promise<ApiResult<LicenseKeyResult>>
 
   // اختيار مجلد عام
   chooseDir(): Promise<ApiResult<string | null>>

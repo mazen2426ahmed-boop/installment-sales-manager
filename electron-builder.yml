@@ -1,6 +1,6 @@
 appId: com.mazen.installmentsales
-productName: إدارة البيع بالتقسيط
-copyright: Copyright © 2026
+productName: اقساط - تطبيق إدارة البيع بالتقسيط
+copyright: Copyright © 2026 م. أحمد الفولي
 directories:
   output: dist
   buildResources: build
@@ -15,14 +15,14 @@ win:
     - target: nsis
       arch:
         - x64
-  artifactName: ${productName}-Setup-${version}.${ext}
+  artifactName: اقساط-Setup-${version}.${ext}
 nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: إدارة البيع بالتقسيط
+  shortcutName: اقساط
   installerLanguages:
     - ar_SA
     - en_US

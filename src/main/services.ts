@@ -1,10 +1,18 @@
 import { all, get, run, transaction, runNoPersist, persist } from './database'
 import { hashPassword, verifyPassword } from './auth'
-import { assertCanWrite, startTrial, activateKey, getLicenseStatus } from './license'
+import {
+  assertCanWrite,
+  startTrial,
+  activateKey,
+  getLicenseStatus,
+  getMachineId,
+  generateKey,
+  verifyDevPasscode
+} from './license'
 import { setBackupDir } from './backup'
 import {
   computeSalePrice,
-  computeProfit,
+  computeRealizedProfit,
   buildInstallmentSchedule,
   computeInstallmentStatus,
   round2,
@@ -29,7 +37,9 @@ import type {
   UserRole,
   SetupStatus,
   FirstRunSetupInput,
-  LicenseStatus
+  LicenseStatus,
+  LicenseGenInput,
+  LicenseKeyResult
 } from '../shared/types'
 
 const now = (): string => new Date().toISOString()
@@ -315,9 +325,19 @@ export function getDashboardStats(): DashboardStats {
   const customersCount = Number(get<{ c: number }>(`SELECT COUNT(*) AS c FROM customers`)?.c ?? 0)
   const salesCount = Number(get<{ c: number }>(`SELECT COUNT(*) AS c FROM sales`)?.c ?? 0)
   const totalSales = round2(Number(get<{ s: number }>(`SELECT COALESCE(SUM(salePrice),0) AS s FROM sales`)?.s ?? 0))
+  // الربح المُحقَّق محاسبياً: يُعترف بالربح تناسبياً مع المبالغ المحصّلة (المقدم + الأقساط المسددة)
   const totalProfit = round2(
     Number(
-      get<{ p: number }>(`SELECT COALESCE(SUM(salePrice - purchasePrice*quantity),0) AS p FROM sales`)?.p ?? 0
+      get<{ p: number }>(
+        `SELECT COALESCE(SUM(
+           (s.salePrice - s.purchasePrice * s.quantity) *
+           ((s.downPayment + COALESCE(p.paid, 0)) / s.salePrice)
+         ), 0) AS p
+         FROM sales s
+         LEFT JOIN (SELECT saleId, SUM(paidAmount) AS paid FROM installments GROUP BY saleId) p
+           ON p.saleId = s.id
+         WHERE s.salePrice > 0`
+      )?.p ?? 0
     )
   )
   const totalDown = round2(Number(get<{ d: number }>(`SELECT COALESCE(SUM(downPayment),0) AS d FROM sales`)?.d ?? 0))
@@ -390,8 +410,9 @@ export function getReport(from: string, to: string): ReportSummary {
 
   for (const s of sales) {
     const det = enrichSale(s)
-    const profit = computeProfit(s.purchasePrice, s.quantity, s.salePrice)
     const collected = round2(s.downPayment + det.totalPaid)
+    // الربح المُحقَّق على أساس المبالغ المحصّلة فعلاً
+    const profit = computeRealizedProfit(s.purchasePrice, s.quantity, s.salePrice, collected)
     rows.push({
       saleId: s.id,
       receiptNo: s.receiptNo,
@@ -560,6 +581,22 @@ export function activateLicense(key: string): LicenseStatus {
 export function startLicenseTrial(days: number): LicenseStatus {
   requireOwner()
   return startTrial(days)
+}
+
+// معرّف الجهاز الحالي (بصمة العتاد) — يُستخدم لربط مفاتيح الترخيص
+export function machineId(): string {
+  return getMachineId()
+}
+
+// التحقق من رمز المطوّر لفتح أداة توليد المفاتيح
+export function checkDevAccess(passcode: string): boolean {
+  return verifyDevPasscode(passcode)
+}
+
+// توليد مفتاح ترخيص داخل البرنامج (أداة المطوّر، تتطلب رمز المطوّر)
+export function generateLicenseKey(input: LicenseGenInput): LicenseKeyResult {
+  requireOwner()
+  return generateKey(input)
 }
 
 export { OVERDUE_THRESHOLD_DAYS, toISODate, persist }

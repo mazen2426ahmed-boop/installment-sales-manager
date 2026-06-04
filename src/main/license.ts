@@ -1,7 +1,8 @@
-import { createHmac } from 'crypto'
+import { createHmac, createHash } from 'crypto'
+import { networkInterfaces, hostname, platform, arch } from 'os'
 import { getConfig, setConfig } from './database'
 import { daysBetween, todayISO } from '../shared/finance'
-import type { LicenseStatus } from '../shared/types'
+import type { LicenseStatus, LicenseGenInput, LicenseKeyResult } from '../shared/types'
 
 /**
  * سرّ التوقيع المضمَّن في التطبيق للتحقق من مفاتيح الترخيص دون اتصال بالإنترنت.
@@ -10,9 +11,16 @@ import type { LicenseStatus } from '../shared/types'
 const LICENSE_SECRET = 'ISM-2026-9f3a7c1e5b8d40a2-installment-sales-manager'
 const CONFIG_KEY = 'license'
 
+/**
+ * رمز المطوّر اللازم لفتح أداة توليد مفاتيح الترخيص داخل البرنامج.
+ * غيّره هنا قبل توزيع البرنامج لمنع صاحب المحل من توليد مفاتيح بنفسه.
+ */
+const DEV_PASSCODE = 'Fouly#2026'
+
 interface LicensePayload {
   exp: string // تاريخ الانتهاء YYYY-MM-DD
   to?: string // جهة الإصدار (اختياري)
+  mid?: string // معرّف الجهاز المربوط (اختياري)
 }
 
 interface StoredLicense {
@@ -21,14 +29,68 @@ interface StoredLicense {
   expiresAt: string
   issuedTo: string | null
   key: string | null
+  machineId?: string | null // الجهاز المربوط به المفتاح
 }
 
 function b64urlDecode(s: string): string {
   return Buffer.from(s.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8')
 }
 
+function b64urlEncode(s: string): string {
+  return Buffer.from(s, 'utf8')
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
+}
+
 function sign(encoded: string): string {
   return createHmac('sha256', LICENSE_SECRET).update(encoded).digest('hex').slice(0, 32)
+}
+
+// بصمة الجهاز: مشتقة من عناوين MAC غير الداخلية واسم الجهاز والنظام
+// تُعرض بصيغة XXXX-XXXX-XXXX-XXXX لتسهيل نقلها
+export function getMachineId(): string {
+  const ifaces = networkInterfaces()
+  const macs: string[] = []
+  for (const name of Object.keys(ifaces)) {
+    for (const ni of ifaces[name] ?? []) {
+      if (!ni.internal && ni.mac && ni.mac !== '00:00:00:00:00:00') macs.push(ni.mac.toLowerCase())
+    }
+  }
+  macs.sort()
+  const raw = `${macs.join(',')}|${hostname()}|${platform()}|${arch()}`
+  const hash = createHash('sha256').update(raw).digest('hex').toUpperCase()
+  const short = hash.slice(0, 16)
+  return short.replace(/(.{4})(.{4})(.{4})(.{4})/, '$1-$2-$3-$4')
+}
+
+function normalizeMid(mid: string): string {
+  return mid.trim().toUpperCase().replace(/\s+/g, '')
+}
+
+// التحقق من رمز المطوّر اللازم لأداة توليد المفاتيح
+export function verifyDevPasscode(code: string): boolean {
+  return (code ?? '').trim() === DEV_PASSCODE
+}
+
+// توليد مفتاح ترخيص (أداة المطوّر) — يُمكن ربطه بمعرّف جهاز محدد
+export function generateKey(input: LicenseGenInput): LicenseKeyResult {
+  if (!verifyDevPasscode(input.passcode)) throw new Error('رمز المطوّر غير صحيح')
+  let exp = (input.exp ?? '').trim()
+  if (!exp) {
+    const days = Number.isFinite(input.days) ? Number(input.days) : 365
+    exp = addDaysISO(todayISO(), Math.max(1, Math.floor(days)))
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(exp)) throw new Error('تاريخ الانتهاء غير صحيح (YYYY-MM-DD)')
+  const payload: LicensePayload = { exp }
+  const mid = normalizeMid(input.machineId ?? '')
+  if (mid) payload.mid = mid
+  const to = (input.to ?? '').trim()
+  if (to) payload.to = to
+  const encoded = b64urlEncode(JSON.stringify(payload))
+  const key = `${encoded}.${sign(encoded)}`
+  return { key, exp, machineId: payload.mid ?? null, to: payload.to ?? null }
 }
 
 // التحقق من مفتاح الترخيص وإرجاع حمولته إن كان صحيحاً
@@ -62,6 +124,7 @@ function readStored(): StoredLicense | null {
 }
 
 export function getLicenseStatus(): LicenseStatus {
+  const machineId = getMachineId()
   const lic = readStored()
   if (!lic) {
     return {
@@ -72,7 +135,9 @@ export function getLicenseStatus(): LicenseStatus {
       daysLeft: 0,
       expired: true,
       readOnly: true,
-      issuedTo: null
+      issuedTo: null,
+      machineId,
+      boundMachineId: null
     }
   }
   const today = todayISO()
@@ -87,7 +152,9 @@ export function getLicenseStatus(): LicenseStatus {
     daysLeft: Math.max(0, daysLeft),
     expired,
     readOnly: expired,
-    issuedTo: lic.issuedTo
+    issuedTo: lic.issuedTo,
+    machineId,
+    boundMachineId: lic.machineId ?? null
   }
 }
 
@@ -111,12 +178,17 @@ export function startTrial(days: number): LicenseStatus {
 
 export function activateKey(key: string): LicenseStatus {
   const payload = verifyKey(key)
+  // مفتاح مربوط بجهاز: يُرفض إن كان على جهاز مختلف
+  if (payload.mid && payload.mid !== normalizeMid(getMachineId())) {
+    throw new Error('مفتاح الترخيص غير مخصّص لهذا الجهاز')
+  }
   const stored: StoredLicense = {
     type: 'licensed',
     activatedAt: todayISO(),
     expiresAt: payload.exp,
     issuedTo: payload.to ?? null,
-    key: key.trim()
+    key: key.trim(),
+    machineId: payload.mid ?? null
   }
   setConfig(CONFIG_KEY, JSON.stringify(stored))
   return getLicenseStatus()

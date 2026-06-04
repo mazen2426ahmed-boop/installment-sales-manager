@@ -92,7 +92,7 @@ export default function Reports(): React.JSX.Element {
               <div className="v money">{formatMoney(report.totalOutstanding)}</div>
             </div>
             <div className="item">
-              <div className="k">إجمالي الأرباح</div>
+              <div className="k">الأرباح المُحقَّقة (على المحصّل)</div>
               <div className="v money">{formatMoney(report.totalProfit)}</div>
             </div>
           </div>
@@ -109,7 +109,7 @@ export default function Reports(): React.JSX.Element {
                   <th>المقدم</th>
                   <th>المحصّل</th>
                   <th>المتبقي</th>
-                  <th>الربح</th>
+                  <th>الربح المُحقَّق</th>
                 </tr>
               </thead>
               <tbody>
