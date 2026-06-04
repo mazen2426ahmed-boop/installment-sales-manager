@@ -1,0 +1,32 @@
+appId: com.mazen.installmentsales
+productName: اقساط - تطبيق إدارة البيع بالتقسيط
+copyright: Copyright © 2026 م. أحمد الفولي
+directories:
+  output: dist
+  buildResources: build
+files:
+  - out/**/*
+  - node_modules/sql.js/dist/sql-wasm.wasm
+  - package.json
+asarUnpack:
+  - "**/node_modules/sql.js/dist/sql-wasm.wasm"
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: اقساط-Setup-${version}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: اقساط
+  installerLanguages:
+    - ar_SA
+    - en_US
+linux:
+  target:
+    - AppImage
+  category: Office
